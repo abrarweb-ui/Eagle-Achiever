@@ -1,0 +1,82 @@
+# ============================================================
+# Eagle Achievers — Apache .htaccess
+# ============================================================
+
+Options -Indexes
+ServerSignature Off
+
+# ── REWRITE ENGINE ──────────────────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /eagle_achievers/
+
+    # Force HTTPS (uncomment on production)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Remove www (or add www — choose one, uncomment on production)
+    # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    # RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+    # Block access to sensitive directories
+    RewriteRule ^config/ - [F,L]
+    RewriteRule ^database/ - [F,L]
+    RewriteRule ^includes/ - [F,L]
+
+    # Clean URL: /courses → /pages/courses.php
+    RewriteRule ^courses/?$ pages/courses.php [L,QSA]
+    RewriteRule ^course/([^/]+)/?$ pages/course.php?slug=$1 [L,QSA]
+    RewriteRule ^affiliate/?$ pages/affiliate.php [L,QSA]
+    RewriteRule ^about/?$ pages/about.php [L,QSA]
+    RewriteRule ^contact/?$ pages/contact.php [L,QSA]
+    RewriteRule ^privacy/?$ pages/privacy.php [L,QSA]
+    RewriteRule ^refund/?$ pages/refund.php [L,QSA]
+    RewriteRule ^terms/?$ pages/terms.php [L,QSA]
+    RewriteRule ^shipping/?$ pages/shipping.php [L,QSA]
+</IfModule>
+
+# ── SECURITY HEADERS ────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header unset Server
+    Header unset X-Powered-By
+</IfModule>
+
+# ── BLOCK SENSITIVE FILES ───────────────────────────────────
+<FilesMatch "\.(env|sql|log|bak|sh|json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ── BLOCK ACCESS TO PHP IN UPLOADS ─────────────────────────
+<Directory "uploads">
+    <FilesMatch "\.php$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</Directory>
+
+# ── COMPRESSION ─────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript text/javascript
+</IfModule>
+
+# ── BROWSER CACHE ───────────────────────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 6 months"
+    ExpiresByType image/png "access plus 6 months"
+    ExpiresByType image/webp "access plus 6 months"
+</IfModule>
+
+# ── BLOCK BAD BOTS ──────────────────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} (wget|curl|libwww|python|nikto|scan|sqlmap) [NC,OR]
+    RewriteCond %{QUERY_STRING} (union.*select|insert.*into|drop.*table|script.*alert) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
